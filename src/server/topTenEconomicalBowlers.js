@@ -5,20 +5,24 @@ const makeObject = require('../util.js')
 const matchData = makeObject('./src/data/matches.csv');
 const deliveriesData = makeObject('./src/data/deliveries.csv');
 
+// decelar year.
 const year = 2015;
 
+// function to get top ten economic bowler.
 function topTenEconomicalBowlers(matchData, deliveriesData, year) {
     const matchIds = [];
     const allBowlers = {};
     const economicalRunRate = [];
     const topTenEconomicalBowler = [];
 
+    // find match id in the year.
     for (let match of matchData) {
         if (match["season"] == year) {
             matchIds.push(match["id"]);
         }
     }
 
+    // based on match id get all bowlers total balls and runs.
     for (let delivery of deliveriesData) {
 
         if (isExists(matchIds, delivery["match_id"])) {
@@ -36,20 +40,26 @@ function topTenEconomicalBowlers(matchData, deliveriesData, year) {
         }
     }
 
+    // bassed on all bowlers details calculate economic bowl run rate.
     for ( let bowler in allBowlers) {
         let overs = allBowlers[bowler]["ball"] / 6;
         let economic = allBowlers[bowler]["run"] / overs;
         economicalRunRate.push({'bowler':bowler, 'economicRun': economic})
     }
+
+    //sort by economic run rate.
     sortAray(economicalRunRate);
 
+    // get only top ten.
     for (let index1=0; index1<10; index1++) {
         topTenEconomicalBowler.push(economicalRunRate[index1]);
     }
 
+    // returning top ten bowler.
     return topTenEconomicalBowler;
 }
 
+// function for sort by econimic run rate.
 function sortAray( array) {
     for (let index1=0; index1< array.length-1; index1++) {
         for (let index2 = index1+1; index2<array.length; index2++) {
@@ -63,6 +73,7 @@ function sortAray( array) {
     return array;
 }
 
+// function for check already exists or not.
 function isExists (array , value) {
     for (let data of array) {
         if (data == value) {
