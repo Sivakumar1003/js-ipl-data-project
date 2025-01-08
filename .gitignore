@@ -1,0 +1,9 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# vuepress v2.x temp and cache directory
+.temp
+.cache
+
+public/siva.js
