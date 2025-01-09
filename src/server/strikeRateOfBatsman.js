@@ -7,45 +7,38 @@ const deliveriesData = makeObject('./src/data/deliveries.csv');
 
 // function to get strike rate of batsman for each season.
 function strikeRateOfBatsman(matchData, deliveriesData) {
-    let seasonOfMatch = {};     // { id: year}
-    let seasonOfPlayerData = {};  // {year : { batsman : {run , balls }}} 
+    //  To identify all match useing ids.
+    const MatchIds = matchData.reduce((allMatch, match) => {
+        allMatch[match["id"]] = match["season"];
+        return allMatch;
+    }, {});
 
-    // get all match id as key and season as value.
-    for (let match of matchData) {
-        seasonOfMatch[match["id"]] = match["season"];
-    }
-
-    // calculate all indivual delivery in which season and batsman.
-    for(let delivery of deliveriesData) {
-        let year = seasonOfMatch[delivery["match_id"]];
-        let batsman = delivery["batsman"]
-
-        if(seasonOfPlayerData[year] == undefined) {
-            seasonOfPlayerData[year] = {};
-            seasonOfPlayerData[year][batsman] = {'run':0, 'ball': 0}
-        } else if (seasonOfPlayerData[year][batsman] == undefined) {
-            seasonOfPlayerData[year][batsman] = {'run':0, 'ball': 0}
+    const seasonOfPlayerData = deliveriesData.reduce((allBatsman, deliveries) => {
+        let year = MatchIds[deliveries["match_id"]]
+        if(allBatsman[year] == undefined) {
+            allBatsman[year] = {};
+            allBatsman[year][deliveries["batsman"]] = {'runs':0, 'balls':0};
+        } else if (allBatsman[year][deliveries["batsman"]] == undefined) {
+            allBatsman[year][deliveries["batsman"]] = {'runs':0, 'balls':0};
         }
 
-        seasonOfPlayerData[year][batsman]["run"] += parseInt(delivery["batsman_runs"]);
+        allBatsman[year][deliveries["batsman"]]["runs"] += parseInt(deliveries["batsman_runs"]);
 
-        if(delivery["wide_runs"] == 0 && delivery["noball_runs"] == 0) {
-            seasonOfPlayerData[year][batsman]["ball"] += 1;
+        if(deliveries["wide_runs"] == 0 && deliveries["noball_runs"] == 0) {
+            allBatsman[year][deliveries["batsman"]]["balls"] += 1;
         }
-    }
-
-
-    // convert bats run into strickrate.
-    for( let season in seasonOfPlayerData) {
-        for(let player in seasonOfPlayerData[season]) {
-            let run = seasonOfPlayerData[season][player]["run"];
-            let ball = seasonOfPlayerData[season][player]["ball"];
-            let strikeRate = run/ball*100;
-            seasonOfPlayerData[season][player] = strikeRate.toFixed(2);
-        }
-    }
-
-    return seasonOfPlayerData;
+        return allBatsman;
+    },{})
+    
+    return Object.entries(seasonOfPlayerData).reduce((allSeasonData, [season, players]) => {
+        let strikeData = Object.entries(players).reduce((allPlayers, [player, ballsAndRuns]) => {
+            let strikeRate = ballsAndRuns["runs"] / ballsAndRuns["balls"] * 100;
+            allPlayers[player] = strikeRate.toFixed(2);
+            return allPlayers;
+        },{});
+        allSeasonData[season] = strikeData;
+        return allSeasonData;
+    }, {})
 }
 
 fs.writeFileSync('./src/public/output/strikeRateOfBatsman.json', JSON.stringify(strikeRateOfBatsman(matchData, deliveriesData)));
