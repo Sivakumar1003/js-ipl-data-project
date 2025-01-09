@@ -6,21 +6,14 @@ const matchData = makeObject('./src/data/matches.csv');
 
 // function to get who wins both match and toss.
 function tossAndMatchWinner(matchData) {
-    const tossAndMatch = {};
-
-    //  check each match one by one.
-    for (let match of matchData) {
-        if (match["toss_winner"] === match["winner"]) {
-            if(tossAndMatch[match["toss_winner"]] == undefined) {
-                tossAndMatch[match["toss_winner"]] = 1;
-            } else {
-                tossAndMatch[match["toss_winner"]] += 1;
-            }
+    return matchData.reduce((matchAndToss, match) => {
+        // check match winner and toss winner are same.
+        if (match["toss_winner"] == match["winner"]) {
+            matchAndToss[match["winner"]] == undefined ?
+                matchAndToss[match["winner"]] = 1 : matchAndToss[match["winner"]] += 1;
         }
-    }
-
-    // returning the result of who all are win match and toss.
-    return tossAndMatch;
+        return matchAndToss;
+    }, {})
 }
 
 fs.writeFileSync('./src/public/output/tossAndMatchWinner.json', JSON.stringify(tossAndMatchWinner(matchData)));
