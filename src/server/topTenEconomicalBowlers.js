@@ -10,77 +10,42 @@ const year = 2015;
 
 // function to get top ten economic bowler.
 function topTenEconomicalBowlers(matchData, deliveriesData, year) {
-    const matchIds = [];
-    const allBowlers = {};
-    const economicalRunRate = [];
-    const topTenEconomicalBowler = [];
+    // get match ids based on year.
+    const matchIds = matchData.filter(match => {
+        return match["season"] == year;
+    })
+    .map((match) => {
+        return match["id"];
+    })
 
-    // find match id in the year.
-    for (let match of matchData) {
-        if (match["season"] == year) {
-            matchIds.push(match["id"]);
+    // based on match ids get bowlers ball and run.
+    const allBowlers = deliveriesData.filter(deliveries => {
+        return matchIds.includes(deliveries["match_id"]);
+    })
+    .reduce((allBowlers, deliveries) => {
+        let bowler = deliveries["bowler"];
+        if (allBowlers[bowler] == undefined) {
+            allBowlers[bowler] = { 'balls': 0, 'runs': 0 };
         }
-    }
-
-    // based on match id get all bowlers total balls and runs.
-    for (let delivery of deliveriesData) {
-
-        if (isExists(matchIds, delivery["match_id"])) {
-            let bowler = delivery["bowler"]
-            if (allBowlers[bowler] === undefined) {
-                allBowlers[bowler] = {'ball': 0, 'run':0};
-            }
-
-            if (delivery["wide_runs"] == 0 && delivery["noball_runs"] == 0) {
-                allBowlers[bowler]["ball"] += 1;
-            }
-
-            allBowlers[bowler]["run"] += parseInt(delivery["total_runs"]) - (parseInt(delivery["legbye_runs"]) + parseInt(delivery["bye_runs"]));
-
+        if (deliveries["wide_runs"] == 0 && deliveries["noball_runs"] == 0) {
+            allBowlers[bowler]["balls"] += 1;
         }
-    }
+        allBowlers[bowler]["runs"] += parseInt(deliveries["total_runs"]) -
+            (parseInt(deliveries["legbye_runs"]) + parseInt(deliveries["bye_runs"]));
+        return allBowlers;
+    }, {})
 
-    // bassed on all bowlers details calculate economic bowl run rate.
-    for ( let bowler in allBowlers) {
-        let overs = allBowlers[bowler]["ball"] / 6;
-        let economic = allBowlers[bowler]["run"] / overs;
-        economicalRunRate.push({'bowler':bowler, 'economicRun': economic})
-    }
+    // based on all balls and runs calculate economic.
+    let economicBolwer = Object.entries(allBowlers).map(bowler => {
+        let overs = bowler[1]["balls"] / 6;
+        let economic = bowler[1]["runs"] / overs;
+        return {'bowler': bowler[0], 'economicRun': economic};
+    });
 
-    //sort by economic run rate.
-    sortAray(economicalRunRate);
-
-    // get only top ten.
-    for (let index1=0; index1<10; index1++) {
-        topTenEconomicalBowler.push(economicalRunRate[index1]);
-    }
-
-    // returning top ten bowler.
-    return topTenEconomicalBowler;
-}
-
-// function for sort by econimic run rate.
-function sortAray( array) {
-    for (let index1=0; index1< array.length-1; index1++) {
-        for (let index2 = index1+1; index2<array.length; index2++) {
-            if(array[index1]["economicRun"] > array[index2]["economicRun"]) {
-                let temp = array[index1];
-                array[index1] = array[index2];
-                array[index2] = temp;
-            }
-        }
-    }
-    return array;
-}
-
-// function for check already exists or not.
-function isExists (array , value) {
-    for (let data of array) {
-        if (data == value) {
-            return true;
-        }
-    }
-    return false;
+    // sort and return the top ten economic bowler.
+    return economicBolwer.sort((player1, player2) => {
+        return player1["economicRun"] - player2["economicRun"];
+    }).splice(0,10);
 }
 
 fs.writeFileSync('./src/public/output/topTenEconomicalBowlers.json', JSON.stringify(topTenEconomicalBowlers(matchData, deliveriesData, year)));
